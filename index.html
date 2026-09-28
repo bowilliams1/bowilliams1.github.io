@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>BOSH OS · Command Center</title>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- BOSH OS · Command Center page (live v1.0). Source: ceo-dashboard/site/index.src.html; build with site/build_site.py.
+     This page holds no data and no secrets: it asks the Command Center Hub for numbers after sign-in. -->
+<style>
+/* BOSH OS · Command Center (live v1.0, 2026-09-28). Bo's "Command Center" format: flat dark panels, Inter,
+   vivid green. Colour carries meaning: green = fine, amber = watch, red = act, blue = information. */
+:root{
+  --bg:#090e0c; --sb:#0a100e;
+  --panel:#0e1512; --panel-2:#121b17; --panel-3:#16211c;
+  --border:#1b2621; --border-2:#26332c;
+  --text:#e8eeeb; --text-2:#aab5b0; --text-3:#8a9791; --text-4:#7a8781;
+  --green:#3fb950; --green-hi:#56d364; --green-wash:rgba(63,185,80,.12); --green-edge:rgba(63,185,80,.45);
+  --amber:#e3a33b; --amber-wash:rgba(227,163,59,.12);
+  --red:#f0524f; --red-wash:rgba(240,82,79,.12);
+  --blue:#4c9aff; --blue-wash:rgba(76,154,255,.12);
+  --track:#1f2c26;
+  --font:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --r:10px; --sbw:236px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:13.5px/1.45 var(--font);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer}
+a{color:inherit}
+.ic{flex:none;display:block}
+:focus-visible{outline:2px solid var(--green);outline-offset:2px;border-radius:6px}
+[hidden]{display:none!important}
+
+.app{display:grid;grid-template-columns:var(--sbw) minmax(0,1fr);height:100vh}
+
+/* ---------------- sidebar ---------------- */
+.sb{display:flex;flex-direction:column;gap:6px;padding:20px 14px 16px;background:var(--sb);border-right:1px solid var(--border);overflow-y:auto}
+.brand{padding:6px 8px 22px;overflow:visible}
+/* Bo's 3D logo (2026-09-28). Its black background was turned transparent, so it sits on any dark surface. */
+.brand img{display:block;width:198px;height:auto;filter:drop-shadow(0 8px 16px rgba(0,0,0,.55))}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav a{position:relative;display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:9px;color:var(--text-2);text-decoration:none;font-weight:500;font-size:13.5px;transition:background .15s,color .15s}
+.nav a .ic{color:var(--text-3)}
+.nav a:hover{background:rgba(255,255,255,.04);color:var(--text)}
+.nav a.active{background:linear-gradient(180deg,#2e9a40,#237d33);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 6px 18px rgba(46,154,64,.28)}
+.nav a.active .ic{color:#fff}
+.nav a .chev{margin-left:auto;opacity:0}
+.nav a.active .chev{opacity:.9}
+.nav .sep{height:1px;background:var(--border);margin:10px 8px}
+.nav a.soon{color:var(--text-4)}
+.tag{margin-left:auto;font-size:9.5px;font-weight:700;letter-spacing:.06em;padding:3px 6px;border-radius:5px;background:var(--green-wash);color:var(--green-hi)}
+.nav a.soon .tag{background:rgba(255,255,255,.05);color:var(--text-3)}
+.badge{margin-left:auto;min-width:21px;height:19px;padding:0 6px;border-radius:10px;display:inline-grid;place-items:center;font-size:11px;font-weight:700}
+.badge.crit{background:var(--red);color:#fff}
+.badge.warn{background:var(--amber);color:#1c1405}
+.badge.fyi{background:var(--panel-3);color:var(--text-2);box-shadow:inset 0 0 0 1px var(--border-2)}
+.badge.none{display:none}
+.nav a.active .badge{box-shadow:0 0 0 2px rgba(255,255,255,.25)}
+.grow{flex:1}
+.user{display:flex;align-items:center;gap:11px;padding:12px;border:1px solid var(--border);border-radius:var(--r);background:var(--panel)}
+.av{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--panel-3);border:1px solid var(--border-2);font-weight:600;font-size:14px;letter-spacing:.02em;flex:none}
+.user .who{display:flex;flex-direction:column;line-height:1.3;min-width:0}
+.user b{font-weight:600;font-size:13px}
+.user span{font-size:11.5px;color:var(--text-3)}
+.user em{font-style:normal;font-size:11.5px;color:var(--green-hi)}
+.dots{margin-left:auto;background:none;border:0;color:var(--text-3);font-size:18px;line-height:1;padding:4px}
+.status{padding:13px 14px;border:1px solid var(--border);border-radius:var(--r);background:var(--panel);font-size:12px}
+.status .h{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text-2);margin-bottom:8px}
+.status .line{display:flex;align-items:center;gap:8px;color:var(--green-hi);margin-bottom:8px}
+.status .line.warn{color:var(--amber)}
+.status .line i{width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor;flex:none}
+.status .skv{display:flex;justify-content:space-between;color:var(--text-3);padding:2px 0}
+.status .skv b{color:var(--text-2);font-weight:500}
+
+/* ---------------- main + header ---------------- */
+.main{display:flex;flex-direction:column;min-width:0;height:100vh}
+.top{display:flex;align-items:center;gap:20px;padding:18px 26px 14px}
+.ttl{min-width:0;flex:1}
+.ttl h1{margin:0;font-size:26px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;line-height:1.1}
+.ttl p{margin:5px 0 0;color:var(--text-3);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tools{display:flex;align-items:center;gap:10px}
+.ib{position:relative;width:40px;height:40px;border-radius:9px;border:1px solid var(--border-2);background:var(--panel);display:grid;place-items:center;color:var(--text-2)}
+.ib:hover{color:var(--text);border-color:#34443b}
+.ib .n{position:absolute;top:-6px;right:-6px;min-width:19px;height:19px;padding:0 5px;border-radius:10px;background:var(--red);color:#fff;font-size:10.5px;font-weight:700;line-height:19px;text-align:center}
+.clock{display:flex;flex-direction:column;align-items:flex-end;margin-left:12px;line-height:1.15}
+.clock span{font-size:12px;color:var(--text-2);white-space:nowrap}
+.clock b{font-size:25px;font-weight:600;color:var(--green-hi);letter-spacing:.01em;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+.view{flex:1;min-height:0}
+#view-home{overflow-y:auto;padding:0 26px 30px}
+#view-app{display:none;flex-direction:column}
+.refetch .pn,.refetch .kpi{opacity:.72}
+.pn,.kpi{transition:opacity .35s,border-color .2s}
+
+
+/* ---------------- KPI strip ---------------- */
+.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px;margin-bottom:14px}
+.kpi{display:flex;align-items:center;gap:14px;padding:15px 16px;background:var(--panel);border:1px solid var(--border);border-radius:var(--r);min-width:0;text-align:left;width:100%}
+.kpi:hover{border-color:var(--border-2);background:var(--panel-2)}
+.ki{width:46px;height:46px;border-radius:11px;display:grid;place-items:center;flex:none;border:1px solid}
+.ki.good{color:var(--green-hi);background:var(--green-wash);border-color:rgba(63,185,80,.35)}
+.ki.warn{color:var(--amber);background:var(--amber-wash);border-color:rgba(227,163,59,.35)}
+.ki.crit{color:var(--red);background:var(--red-wash);border-color:rgba(240,82,79,.38)}
+.ki.info{color:var(--blue);background:var(--blue-wash);border-color:rgba(76,154,255,.35)}
+.kt{min-width:0;display:flex;flex-direction:column}
+.kl{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kv{margin-top:4px;font-size:21px;font-weight:600;line-height:1.1;white-space:nowrap}
+.kv small{font-size:14px;font-weight:500;color:var(--text-2);margin-left:4px}
+.ks{margin-top:4px;font-size:12px;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ks.good{color:var(--green-hi)} .ks.crit{color:#f59b99} .ks.warn{color:#eec27a}
+.kl .sh,.ks .sh{display:none}
+
+/* ---------------- panels ---------------- */
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:14px}
+.g5{grid-template-columns:minmax(0,1fr) minmax(0,2fr)}
+.span2{grid-column:span 2}
+.g5 .span2{grid-column:auto}
+.pn{display:flex;flex-direction:column;min-width:0;padding:16px 18px;background:var(--panel);border:1px solid var(--border);border-radius:var(--r)}
+.ph{display:flex;align-items:center;gap:10px;margin-bottom:10px;min-height:24px}
+.ph h2{margin:0;font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.ph .sub{font-size:12px;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ph .sp{flex:1}
+.link{background:none;border:0;padding:0;color:var(--blue);font-size:12.5px;font-weight:500;white-space:nowrap}
+.link:hover{text-decoration:underline;text-underline-offset:3px}
+.pf{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:11px;border-top:1px solid var(--border);font-size:12.5px;color:var(--text-3)}
+.pf b{color:var(--text);font-weight:600}
+.chipc{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:4px 8px;border-radius:999px;white-space:nowrap}
+.chipc.crit{color:#f59b99;background:var(--red-wash)} .chipc.warn{color:#eec27a;background:var(--amber-wash)} .chipc.fyi{color:var(--text-2);background:rgba(255,255,255,.05)}
+
+/* list rows */
+.rows{display:flex;flex-direction:column}
+.lr{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.rows > .lr:last-child{border-bottom:0}
+.li{width:34px;height:34px;border-radius:8px;display:grid;place-items:center;border:1px solid var(--border-2);background:var(--panel-2);color:var(--text-2)}
+.li.crit{color:var(--red);background:var(--red-wash);border-color:rgba(240,82,79,.35)}
+.li.warn{color:var(--amber);background:var(--amber-wash);border-color:rgba(227,163,59,.35)}
+.li.fyi{color:var(--text-3)}
+.lt{min-width:0}
+.lt b{display:block;font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lt > span{display:block;font-size:12px;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lm{text-align:right;font-size:12px;color:var(--text-2);white-space:nowrap;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.lm small{font-size:11.5px;color:var(--text-3)}
+.stp{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:500;white-space:nowrap}
+.stp::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.stp.good{color:var(--green-hi)} .stp.warn{color:var(--amber)} .stp.crit{color:var(--red)} .stp.off{color:var(--text-3)}
+
+/* Customer Service email rows: same brand marks and tier chips as the Customer Service app */
+.bb{width:34px;height:34px;border-radius:8px;border:1px solid var(--border-2);background:var(--panel-2);display:grid;place-items:center;flex:none}
+.bb svg{width:18px;height:18px;color:#6abf4b;display:block}
+.bb img{height:15px;width:auto;display:block}
+.bb.internal{font-size:11px;font-weight:700;color:var(--text-2)}
+.qr{cursor:pointer;border-radius:8px;transition:background .15s}
+.qr:hover,.qr:focus-visible{background:rgba(255,255,255,.03)}
+.qr{grid-template-rows:auto auto;row-gap:3px}
+.qr .bb{grid-row:1 / span 2}
+.qn{min-width:0;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qn b{font-weight:600}
+.qn em{font-style:normal;color:var(--text-3)}
+.qs{grid-column:2 / -1;min-width:0;font-size:12px;font-style:italic;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tier{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;padding:3px 7px;border-radius:5px}
+.tier.RED{background:var(--red-wash);color:#f5847f}
+.tier.YELLOW{background:var(--amber-wash);color:var(--amber)}
+.tier.GREEN{background:var(--green-wash);color:var(--green-hi)}
+.sgrid.cs3{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.sgrid.cs3 .sbx{padding:10px 10px}
+.sgrid.cs3 .sbx .l{font-size:10.5px}
+.sgrid.cs3 .sbx .v{font-size:19px;margin-top:5px}
+.sbx.hl{border-color:rgba(63,185,80,.4);background:linear-gradient(180deg,rgba(63,185,80,.08),var(--panel-2))}
+/* Bill Pay: the total of every unpaid bill sits on top */
+.allbills{padding:13px 14px;border-radius:9px;border:1px solid rgba(227,163,59,.35);background:linear-gradient(180deg,rgba(227,163,59,.09),var(--panel-2));margin-bottom:9px}
+.allbills .l{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#eec27a}
+.allbills .v{margin-top:4px;font-size:28px;font-weight:600;line-height:1.1}
+.allbills .d{margin-top:4px;font-size:12px;color:var(--text-3)}
+
+/* decisions */
+.dr{grid-template-columns:34px minmax(0,1fr) auto auto}
+.dr .lt > span{white-space:normal}
+.dmeta{font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px;color:var(--text-4)}
+.dmeta .crit{color:#f5847f} .dmeta .warn{color:var(--amber)} .dmeta .fyi{color:var(--text-3)}
+.dr.extra{display:none}
+.all .dr.extra{display:grid}
+.obtn{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border-radius:7px;border:1px solid rgba(63,185,80,.45);background:rgba(63,185,80,.08);color:var(--text);font-size:12px;font-weight:600;white-space:nowrap}
+.obtn:hover{background:rgba(63,185,80,.18)}
+.obtn .ic{color:var(--green-hi)}
+.whyb{background:none;border:0;padding:0 0 0 6px;font-size:11.5px;color:var(--text-4);text-decoration:underline;text-underline-offset:3px}
+.whyb:hover{color:var(--text-2)}
+.why{grid-column:2 / -1;display:flex;gap:8px;align-items:flex-start;margin:-2px 0 4px;padding:8px 10px;border-radius:8px;background:rgba(0,0,0,.25);border:1px solid var(--border);font-size:12px;color:var(--text-2)}
+.why .ic{color:var(--green-hi);margin-top:2px}
+.why code{margin-left:auto;font:500 11px var(--font);color:var(--text-4);white-space:nowrap}
+.more{align-self:flex-start;margin-top:8px;background:none;border:1px solid var(--border-2);border-radius:7px;padding:6px 10px;font-size:12px;color:var(--text-2)}
+.more:hover{color:var(--text)}
+.allclear{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px;padding:22px;border-radius:9px;border:1px solid rgba(63,185,80,.2);background:rgba(63,185,80,.04);color:var(--text-2);font-size:13.5px}
+.allclear .ic{color:var(--green-hi)}
+
+/* stat boxes */
+.sgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.sgrid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.stack{display:flex;flex-direction:column;gap:9px}
+.sbx{padding:11px 12px;background:var(--panel-2);border:1px solid var(--border);border-radius:8px;min-width:0}
+.sbx .l{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sbx .v{margin-top:6px;font-size:21px;font-weight:600;line-height:1.1;white-space:nowrap}
+.sbx .v.crit{color:#f5847f}
+.sbx .d{margin-top:5px;font-size:11.5px;color:var(--text-3);line-height:1.35}
+.d.good{color:var(--green-hi)} .d.crit{color:#f59b99} .d.warn{color:#eec27a}
+.stack .sbx{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.stack .sbx > div{min-width:0}
+.stack .sbx .v{margin-top:0;font-size:19px}
+.stack .sbx .d{margin-top:3px}
+.combo{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:center}
+.klist{display:flex;flex-direction:column;min-width:0}
+.krow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);min-width:0}
+.krow:last-child{border-bottom:0}
+.krow > div{min-width:0}
+.krow .l{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-3);white-space:nowrap}
+.krow .d{font-size:11.5px;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.krow .v{font-size:19px;font-weight:600;white-space:nowrap}
+.krow .v.crit{color:#f5847f}
+
+/* ring gauge */
+.ring{position:relative;width:128px;height:128px;outline:none;flex:none}
+.ring svg{display:block}
+.rt{fill:none;stroke:var(--track);stroke-width:9}
+.rp{fill:none;stroke:var(--green);stroke-width:9;stroke-linecap:round;filter:drop-shadow(0 0 5px rgba(63,185,80,.45))}
+.rp.warn{stroke:var(--amber);filter:drop-shadow(0 0 5px rgba(227,163,59,.4))}
+.rc{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 24px}
+.rc small{font-size:9px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-3)}
+.rc b{font-size:26px;font-weight:600;line-height:1.1;margin-top:2px}
+.rc span{font-size:10.5px;color:var(--text-3);line-height:1.25;margin-top:3px}
+
+/* reviews status list */
+.rsec{padding:9px 0;border-bottom:1px solid var(--border)}
+.rsec:first-of-type{padding-top:2px}
+.rsec .k{font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.rsec .k.crit{color:#f5847f} .rsec .k.warn{color:var(--amber)} .rsec .k.good{color:var(--green-hi)}
+.rsec .p{display:flex;justify-content:space-between;gap:10px;margin-top:4px;font-size:13px;font-weight:600}
+.rsec .p > span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rsec .p b{white-space:nowrap;font-weight:600}
+.rsec .p b em{font-style:normal;color:var(--text-4);font-weight:500;margin-left:4px}
+.rsec .s{font-size:12px;color:var(--text-3);margin-top:2px}
+.bar{height:6px;border-radius:3px;background:var(--track);margin-top:7px;overflow:hidden;outline:none}
+.bar span{display:block;height:100%;border-radius:3px;background:var(--green)}
+.bar.crit span{background:var(--red)} .bar.warn span{background:var(--amber)}
+
+/* ---------------- automations (agents) ---------------- */
+.agents{border-color:var(--green-edge);box-shadow:0 0 0 1px rgba(63,185,80,.06),0 0 36px rgba(63,185,80,.05);margin-bottom:14px}
+.agrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}   /* 5 automations: no Inventory card */
+.ag{display:flex;flex-direction:column;gap:8px;padding:14px;background:var(--panel-2);border:1px solid var(--border);border-radius:9px;min-width:0}
+.ag.warn{border-color:rgba(227,163,59,.4)}
+.ag.soon{opacity:.62}
+.agh{display:flex;align-items:flex-start;gap:11px}
+.agh > .ic{color:var(--green-hi)}
+.ag.warn .agh > .ic{color:var(--amber)}
+.ag.soon .agh > .ic{color:var(--text-3)}
+.agn{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;line-height:1.3;margin-bottom:3px}
+.agd{font-size:12.5px;color:var(--text-3);line-height:1.4;min-height:53px}
+.agb{display:flex;align-items:baseline;gap:7px;margin-top:2px}
+.agb b{font-size:25px;font-weight:600;line-height:1}
+.agb span{font-size:12px;color:var(--text-3)}
+.agk{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--text-3)}
+.agk b{color:var(--text);font-weight:600;white-space:nowrap}
+.agk b.warn{color:var(--amber)}
+.lvl{align-self:flex-start;font-size:10.5px;font-weight:600;letter-spacing:.02em;padding:3px 7px;border-radius:5px;background:rgba(76,154,255,.1);color:#8dbcff}
+.gbtn{margin-top:auto;display:flex;align-items:center;justify-content:center;gap:6px;height:34px;border-radius:7px;border:1px solid rgba(255,255,255,.06);
+  background:linear-gradient(180deg,#2e9a40,#237d33);color:#fff;font-size:12.5px;font-weight:600;box-shadow:inset 0 1px 0 rgba(255,255,255,.14)}
+.gbtn:hover{filter:brightness(1.1)}
+.gbtn[disabled]{background:var(--panel-3);color:var(--text-3);cursor:default;filter:none;box-shadow:none}
+.agnote{font-size:11.5px;color:#eec27a;line-height:1.35}
+
+/* ---------------- week ahead + activity ---------------- */
+.wk{display:grid;grid-template-columns:62px minmax(0,1fr) auto;gap:10px;align-items:start;padding:9px 0;border-bottom:1px solid var(--border)}
+.rows > .wk:last-child{border-bottom:0}
+.wd{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-2);padding-top:2px}
+.wd small{display:block;font-weight:500;color:var(--text-4);letter-spacing:0;text-transform:none;font-size:11.5px}
+.wk.today .wd{color:var(--green-hi)}
+.wi{display:flex;flex-direction:column;gap:4px;min-width:0}
+.wi div{display:flex;gap:7px;align-items:center;font-size:12.5px;color:var(--text-2);min-width:0}
+.wi div span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wi .ic{color:var(--text-3)}
+.wi .bill .ic{color:var(--green-hi)}
+.wt{font-size:13px;font-weight:600;white-space:nowrap;padding-top:1px}
+.wt.none{color:var(--text-4);font-weight:500;font-size:12px}
+.acts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:24px}
+.act{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)}
+.act > .ic{color:var(--green-hi)}
+.act.warn > .ic{color:var(--amber)} .act.crit > .ic{color:var(--red)}
+.act .t{font-size:12.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.act .w{text-align:right;font-size:11.5px;color:var(--text-3);white-space:nowrap}
+.act .w small{display:block;color:var(--text-4);font-size:11px}
+
+/* tooltip */
+.tip{position:fixed;z-index:80;pointer-events:none;max-width:290px;background:#111a16;border:1px solid var(--border-2);border-radius:9px;padding:8px 11px;box-shadow:0 12px 34px rgba(0,0,0,.55);opacity:0;transform:translateY(4px);transition:opacity .12s,transform .12s}
+.tip.on{opacity:1;transform:none}
+.tip .tv{font-size:15px;font-weight:600}
+.tip .tl{margin-top:2px;font-size:12px;color:var(--text-3)}
+
+/* search palette */
+.pal{position:fixed;inset:0;z-index:70;background:rgba(3,6,5,.62);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);display:flex;justify-content:center;padding-top:12vh}
+.palbox{width:min(620px,92vw);background:#0f1814;border:1px solid var(--border-2);border-radius:13px;box-shadow:0 30px 80px rgba(0,0,0,.7);overflow:hidden;align-self:flex-start}
+.palin{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border)}
+.palin .ic{color:var(--text-3)}
+.palin input{flex:1;background:none;border:0;outline:none;color:var(--text);font:15px var(--font)}
+.palin input::-webkit-search-cancel-button{display:none}
+.palin kbd{font:11px var(--font);color:var(--text-3);border:1px solid var(--border-2);border-radius:5px;padding:2px 6px}
+.pres{padding:8px;max-height:52vh;overflow:auto}
+.sr{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:9px 10px;color:var(--text-2)}
+.sr:hover,.sr:focus-visible{background:rgba(63,185,80,.08);color:var(--text)}
+.sr .ic{color:var(--green-hi)}
+.sr .srt{display:flex;flex-direction:column;min-width:0;flex:1}
+.sr .srt b{font-weight:600;color:var(--text)}
+.sr .srt small{font-size:12px;color:var(--text-3)}
+.sr .sra{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-4)}
+.srh,.srf{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-4);padding:8px 10px}
+.srf{border-top:1px solid var(--border);margin-top:6px;text-transform:none;letter-spacing:0;font-weight:500}
+
+/* ---------------- live app view ---------------- */
+.apphead{display:flex;align-items:center;gap:14px;padding:0 26px 12px}
+.livechip{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--green-hi);background:var(--green-wash);padding:6px 10px;border-radius:999px;white-space:nowrap}
+.livechip i{width:7px;height:7px;border-radius:50%;background:currentColor;animation:pulse 2.6s infinite}
+.apnote{font-size:12.5px;color:var(--text-3);min-width:0;flex:1}
+.gh{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--border-2);background:var(--panel);color:var(--text);font-size:12.5px;font-weight:500;text-decoration:none;white-space:nowrap}
+.gh:hover{border-color:#34443b}
+.gh .ic{color:var(--green-hi)}
+.frames{position:relative;flex:1;margin:0 26px 20px;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#050806}
+.fwrap{position:absolute;inset:0}
+.fwrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#080c08}
+.fload{position:absolute;inset:0;display:grid;place-items:center;background:var(--bg);transition:opacity .35s;z-index:2}
+.fwrap.loaded .fload{opacity:0;pointer-events:none}
+.spin{width:32px;height:32px;border-radius:50%;border:3px solid rgba(63,185,80,.15);border-top-color:var(--green);animation:spin 1s linear infinite;margin:0 auto 12px}
+.fload p{margin:0;color:var(--text-3)}
+.soonbox{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:40px}
+.soonbox .ki{margin:0 auto 16px;width:60px;height:60px;border-radius:16px}
+.soonbox h3{margin:0 0 8px;font-size:22px;font-weight:600;letter-spacing:.03em;text-transform:uppercase}
+.soonbox p{margin:0 auto;max-width:460px;color:var(--text-3)}
+
+.foot{margin-top:6px;padding-top:14px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between;color:var(--text-4);font-size:12px}
+.foot b{color:var(--text-3)}
+
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(63,185,80,.5)}70%{box-shadow:0 0 0 7px rgba(63,185,80,0)}100%{box-shadow:0 0 0 0 rgba(63,185,80,0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.anim{animation:rise .45s cubic-bezier(.2,.7,.2,1) both}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ---------------- responsive ---------------- */
+@media (max-width:1680px){
+  .agrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .kl .lg,.ks .lg{display:none}.kl .sh,.ks .sh{display:inline}
+  .kpi{gap:12px;padding:14px}.ki{width:40px;height:40px;border-radius:10px}
+  .fr .lt > span{white-space:normal}
+  .sgrid.cs3{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:1440px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:1320px){
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .g5{grid-template-columns:minmax(0,1fr)}
+  .clock{display:none}
+}
+@media (max-width:1060px){
+  :root{--sbw:76px}
+  .sb{padding:16px 10px}
+  .brand{padding:4px 0 16px;width:56px;overflow:hidden}
+  .brand img{width:176px;max-width:none}
+  .nav a > span:not(.badge),.nav a .tag,.nav a .chev,.user .who,.dots,.status .skv,.status .h{display:none}
+  .nav a{justify-content:center;padding:11px 0}
+  .badge{position:absolute;top:2px;right:4px;margin:0;min-width:17px;height:17px;font-size:10px}
+  .user{justify-content:center;padding:8px}
+  .status{padding:10px;display:flex;justify-content:center}
+  .status .line span{display:none}
+  .status .line{margin:0}
+  .acts{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:760px){
+  body{overflow:auto}
+  .app{grid-template-columns:minmax(0,1fr);height:auto}
+  .sb{flex-direction:row;align-items:center;overflow-x:auto;border-right:0;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;padding:8px 12px}
+  .brand{padding:0 6px 0 0}
+  .nav{flex-direction:row}
+  .nav .sep,.grow,.user,.status{display:none}
+  .main{height:auto}
+  .top{padding:14px 16px 10px}
+  .ttl p{white-space:normal}
+  #view-home{overflow:visible;padding:0 16px 24px}
+  .kpis{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .grid,.g5{grid-template-columns:minmax(0,1fr)}
+  .span2{grid-column:auto}
+  .agrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .dr{grid-template-columns:34px minmax(0,1fr)}
+  .dr .lm,.dr .obtn{grid-column:2;justify-self:start}
+  .apphead{flex-wrap:wrap;padding:0 16px 10px}
+  .frames{margin:0 16px 16px}
+  #view-app{min-height:80vh}
+}
+
+/* ---------------- live page additions (v1.0) ---------------- */
+.ki.fyi{color:var(--blue);background:var(--blue-wash);border-color:rgba(76,154,255,.35)}
+.span3{grid-column:span 3}
+.ag.crit{border-color:rgba(240,82,79,.45)}
+.ag.crit .agh > .ic{color:var(--red)}
+.pf .m{color:var(--text-4)}
+.none{padding:14px 0;color:var(--text-3);font-size:12.5px}
+.empty{display:flex;gap:10px;align-items:flex-start;padding:14px;border-radius:9px;border:1px dashed rgba(227,163,59,.4);background:rgba(227,163,59,.05);color:#eec27a;font-size:12.5px;line-height:1.45}
+.empty .ic{margin-top:1px}
+.qmore{padding:9px 0 0;font-size:12px;color:var(--text-3)}
+.banner{display:flex;align-items:flex-start;gap:10px;padding:10px 13px;border-radius:9px;margin-bottom:14px;font-size:12.5px;line-height:1.45}
+.banner.warn{background:var(--amber-wash);border:1px solid rgba(227,163,59,.4);color:#f0dcae}
+.banner.crit{background:var(--red-wash);border:1px solid rgba(240,82,79,.45);color:#f8c9c7}
+.banner .ic{margin-top:1px}
+.ib.busy .ic{animation:spin 1s linear infinite}
+.ib[disabled]{opacity:.6;cursor:default}
+.toast{position:fixed;left:50%;bottom:26px;z-index:90;transform:translate(-50%,10px);max-width:min(560px,90vw);padding:10px 16px;border-radius:10px;background:#111a16;border:1px solid var(--border-2);box-shadow:0 14px 40px rgba(0,0,0,.6);font-size:13px;color:var(--text);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.loading .kpis,.loading .grid,.loading .agents{opacity:.5}
+
+/* sign-in: the Command Center's own password (each app keeps its own sign-in) */
+.signin{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:20px;background:radial-gradient(1200px 600px at 50% 18%,#0f1a15,var(--bg))}
+.sibox{width:min(380px,100%);display:flex;flex-direction:column;gap:10px;padding:28px 26px 22px;background:var(--panel);border:1px solid var(--border-2);border-radius:14px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.silogo{width:220px;height:auto;align-self:center;margin-bottom:6px;filter:drop-shadow(0 8px 16px rgba(0,0,0,.55))}
+.sibox h1{margin:0;font-size:20px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;text-align:center}
+.sibox p{margin:0;color:var(--text-3);text-align:center;font-size:13px}
+.sibox label{margin-top:8px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-2)}
+.sibox input[type=password]{height:42px;padding:0 12px;border-radius:9px;border:1px solid var(--border-2);background:var(--panel-2);color:var(--text);font:15px var(--font);outline:none}
+.sibox input[type=password]:focus{border-color:var(--green-edge);box-shadow:0 0 0 3px rgba(63,185,80,.15)}
+.sibox .gbtn{height:42px;margin-top:6px;font-size:14px}
+.sierr{min-height:18px;color:#f59b99;font-size:12.5px;text-align:center}
+.sibox p.sinote{font-size:12px;color:var(--text-4)}
+.vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (max-width:1440px){.grid:not(.g5){grid-template-columns:repeat(2,minmax(0,1fr))}.span3{grid-column:span 2}}   /* laptops: 2 panels a row */
+@media (max-width:760px){.grid:not(.g5){grid-template-columns:minmax(0,1fr)}.span3{grid-column:auto}}   /* phones: 1 panel a row */
+</style>
+</head>
+<body class="loading">
+<div class="app">
+  <aside class="sb" aria-label="BOSH OS">
+    <div class="brand"><img id="logo" src="assets/bosh-logo-3d.png" alt="BOSH Chemical"></div>
+    <nav class="nav" id="nav" aria-label="Main">
+      <a href="#home" data-view="home" class="active"><i data-ic="grid"></i><span>Command Center</span><i data-ic="chev" data-cls="chev"></i></a>
+      <a href="#cs" data-view="cs"><i data-ic="cs"></i><span>Customer Service</span><span class="badge none" data-badge="cs"></span></a>
+      <a href="#inv" data-view="inv"><i data-ic="box"></i><span>Inventory</span><span class="badge none" data-badge="inv"></span></a>
+      <a href="#rev" data-view="rev"><i data-ic="star"></i><span>Reviews</span><span class="badge none" data-badge="rev"></span></a>
+      <a href="#ap" data-view="ap"><i data-ic="receipt"></i><span>Bill Pay</span><span class="badge none" data-badge="ap"></span></a>
+      <div class="sep"></div>
+      <a href="#ads" data-view="ads" class="soon"><i data-ic="ads"></i><span>Amazon Ads</span><span class="tag">SOON</span></a>
+    </nav>
+    <div class="grow"></div>
+    <div class="user"><div class="av">BW</div><div class="who"><b>Bo Williams</b><span>Owner</span><em id="who">● Signed in</em></div>
+      <button class="dots" id="signOut" aria-label="Sign out of the Command Center" data-tv="Sign out" data-tl="Signs this computer out of the Command Center only. Your apps stay signed in."><i data-ic="out"></i></button></div>
+    <div class="status" id="sys" aria-live="polite"></div>
+  </aside>
+
+  <div class="main">
+    <header class="top">
+      <div class="ttl"><h1 id="pageTitle">Command Center</h1><p id="pageSub">Real-time overview of every BOSH app: what needs you, what changed, what's next</p></div>
+      <div class="tools">
+        <button class="ib" id="openSearch" aria-label="Search every app (⌘K)" data-tv="Search" data-tl="Emails, bills, freight and products · ⌘K"><i data-ic="search"></i></button>
+        <button class="ib" id="refresh" aria-label="Check the apps now" data-tv="Check the apps now" data-tl="It also checks by itself every 15 minutes"><i data-ic="reload"></i></button>
+        <button class="ib" id="bell" aria-label="Urgent items"><i data-ic="bell"></i><span class="n" id="bellN" hidden></span></button>
+        <div class="clock"><span id="dateTxt"></span><b id="timeTxt"></b></div>
+      </div>
+    </header>
+
+    <div class="view" id="view-home">
+      <div class="banner" id="banner" role="status" hidden></div>
+
+      <section class="kpis" id="kpis" aria-label="Headline numbers"></section>
+
+      <section class="grid">
+        <article class="pn anim" id="pCS"></article>
+        <article class="pn anim" id="pAP" style="animation-delay:.03s"></article>
+        <article class="pn anim" id="frOut" style="animation-delay:.06s"></article>
+        <article class="pn anim" id="frIn" style="animation-delay:.09s"></article>
+      </section>
+
+      <section class="grid">
+        <article class="pn span3 anim" id="decPanel" aria-labelledby="decH"></article>
+        <article class="pn anim" id="pREV" style="animation-delay:.08s"></article>
+      </section>
+
+      <section class="pn agents anim" id="agents" aria-labelledby="agH"></section>
+
+      <section class="grid g5">
+        <article class="pn anim" id="week"></article>
+        <article class="pn span2 anim" id="activity"></article>
+      </section>
+
+      <footer class="foot">
+        <div><b>How this works:</b> every 15 minutes the Command Center reads your four apps’ spreadsheets, view-only, and shows what needs you. It never changes an app.</div>
+        <div id="footVer">BOSH OS · Command Center</div>
+      </footer>
+    </div>
+
+    <div class="view" id="view-app">
+      <div class="apphead">
+        <span class="livechip"><i></i>Live app · real data</span>
+        <span class="apnote" id="apNote">Each app keeps its own sign-in, exactly as before. Sign in once in the morning and it stays signed in.</span>
+        <button class="gh" id="apReload"><i data-ic="reload"></i>Reload</button>
+        <a class="gh" id="apNewTab" target="_blank" rel="noopener"><i data-ic="ext"></i>Open in new tab</a>
+      </div>
+      <div class="frames" id="frames">
+        <div class="fwrap" id="fw-ads" hidden>
+          <div class="soonbox"><div><div class="ki info"><i data-ic="ads" data-s="28"></i></div><h3>Amazon Ads is still being built</h3><p>It gets its place in this menu, a card on the Command Center and its own automation once it's finished. It's empty for now on purpose.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="pal" id="pal" hidden>
+  <div class="palbox" role="dialog" aria-label="Search every app">
+    <div class="palin"><i data-ic="search"></i><input id="q" type="search" placeholder="Search emails, bills, freight, products…" autocomplete="off" spellcheck="false" aria-label="Search every app"><kbd>esc</kbd></div>
+    <div class="pres" id="pres"></div>
+  </div>
+</div>
+<div class="tip" id="tip" role="tooltip"><div class="tv"></div><div class="tl"></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div class="signin" id="signin" hidden>
+  <form class="sibox" id="siForm" autocomplete="on">
+    <img class="silogo" src="assets/bosh-logo-3d.png" alt="BOSH Chemical">
+    <h1>Command Center</h1>
+    <p>Sign in with your Command Center password.</p>
+    <input class="vh" type="text" name="username" autocomplete="username" value="BOSH Command Center" tabindex="-1" aria-hidden="true" readonly>
+    <label for="siPw">Password</label>
+    <input id="siPw" name="password" type="password" autocomplete="current-password" required>
+    <button class="gbtn" id="siBtn" type="submit">Sign in</button>
+    <div class="sierr" id="siErr" role="alert"></div>
+    <p class="sinote">Stays signed in on this computer for 30 days. Your apps keep their own sign-ins.</p>
+  </form>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+/* ================= configuration ================= */
+const HUB_URL = 'https://script.google.com/macros/s/AKfycbzoADb97sxJJ5AwBQWtQvcSU1xFHQRxV-H49AKK52MFko3tjgAFuePutT6gy80FNhM/exec';            // the Command Center Hub: Apps Script web app in bowilliams@boshchemical.com
+const SESSION_KEY = 'bosh_cc_session';    // {token, exp}: a 30-day pass, never the password
+const POLL_MS = 2 * 60 * 1000;            // ask the Hub for fresh numbers every 2 minutes (it reads the apps every 15)
+
+/* ================= icons (inline, 24px grid, 1.75 stroke) ================= */
+const ICONS = {
+  grid:'<rect x="3.5" y="3.5" width="7" height="9" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="5" rx="1.6"/><rect x="13.5" y="11.5" width="7" height="9" rx="1.6"/><rect x="3.5" y="15.5" width="7" height="5" rx="1.6"/>',
+  cs:'<path d="M20.5 12a8.5 8.5 0 0 1-12.3 7.6L3.5 20.5l1-4.4A8.5 8.5 0 1 1 20.5 12z"/><path d="M8.5 10.5h7M8.5 13.8h4.5"/>',
+  box:'<path d="M20.5 7.8 12 3.3 3.5 7.8v8.4l8.5 4.5 8.5-4.5z"/><path d="M3.5 7.8 12 12.3l8.5-4.5M12 12.3v8.4"/>',
+  star:'<path d="m12 3.6 2.55 5.2 5.75.83-4.15 4.05.98 5.72L12 16.7l-5.13 2.7.98-5.72L3.7 9.63l5.75-.83z"/>',
+  receipt:'<path d="M6 3.5h12v17l-2.5-1.6-2.5 1.6-2.5-1.6-2.5 1.6-2-1.3z"/><path d="M9 8h6M9 11.5h6M9 15h3.5"/>',
+  ads:'<path d="M4 20V11M9.5 20V5M15 20v-6.5M20.5 20V9"/>',
+  search:'<circle cx="11" cy="11" r="6.8"/><path d="m20 20-4.2-4.2"/>',
+  bell:'<path d="M6 15.5V11a6 6 0 1 1 12 0v4.5l1.8 2H4.2z"/><path d="M10 20.3a2.2 2.2 0 0 0 4 0"/>',
+  chev:'<path d="m9 6 6 6-6 6"/>',
+  alert:'<circle cx="12" cy="12" r="8.6"/><path d="M12 7.6v5.2"/><path d="M12 16.3h.01"/>',
+  warn:'<path d="M12 4.2 20.8 19.5H3.2z"/><path d="M12 10v4.2"/><path d="M12 17h.01"/>',
+  info:'<circle cx="12" cy="12" r="8.6"/><path d="M12 11v5"/><path d="M12 7.9h.01"/>',
+  checkc:'<circle cx="12" cy="12" r="8.6"/><path d="m8.3 12.4 2.6 2.6 5-5.2"/>',
+  truck:'<path d="M2.8 6.2h11v9.3h-11z"/><path d="M13.8 9.3h3.9l3.5 3.4v2.8h-7.4"/><circle cx="7" cy="17.4" r="1.9"/><circle cx="17.2" cy="17.4" r="1.9"/>',
+  clock:'<circle cx="12" cy="12" r="8.6"/><path d="M12 7.4V12l3.1 2"/>',
+  mail:'<rect x="3.3" y="5.3" width="17.4" height="13.4" rx="2"/><path d="m3.8 7 8.2 6 8.2-6"/>',
+  ext:'<path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18.5 14v4.8a1.2 1.2 0 0 1-1.2 1.2H5.2A1.2 1.2 0 0 1 4 18.8V6.7a1.2 1.2 0 0 1 1.2-1.2H10"/>',
+  reload:'<path d="M19.6 11A7.8 7.8 0 1 0 17.3 16.7"/><path d="M20 4.6v6.2h-6.2"/>',
+  arrow:'<path d="M5 12h14M13.2 6.2 19 12l-5.8 5.8"/>',
+  hub:'<circle cx="12" cy="12" r="3"/><circle cx="12" cy="3.8" r="1.6"/><circle cx="19.2" cy="16.2" r="1.6"/><circle cx="4.8" cy="16.2" r="1.6"/><path d="M12 5.4V9M17.8 15.4l-3.2-1.8M6.2 15.4l3.2-1.8"/>',
+  down:'<path d="M12 4v13M6.5 11.5 12 17l5.5-5.5"/><path d="M5 20.5h14"/>',
+  up:'<path d="M12 20V7M6.5 12.5 12 7l5.5 5.5"/><path d="M5 3.5h14"/>',
+  out:'<path d="M14.5 4H18a1.5 1.5 0 0 1 1.5 1.5v13A1.5 1.5 0 0 1 18 20h-3.5"/><path d="M9.5 16.5 5 12l4.5-4.5M5 12h10"/>'
+};
+function icon(name, size = 18, cls = ''){
+  return `<svg class="ic ${cls}" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`;
+}
+function hydrateIcons(root = document){
+  root.querySelectorAll('i[data-ic]').forEach(i => { i.outerHTML = icon(i.dataset.ic, +(i.dataset.s || 18), i.dataset.cls || ''); });
+}
+
+/* ================= helpers ================= */
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtTime = d => d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+const fmtDay  = d => d.toLocaleDateString('en-US', {weekday:'short'});
+function ago(d){
+  const m = Math.round((Date.now() - d) / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return m + ' min ago';
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  if (d >= today) return fmtTime(d);
+  return (d >= today - 86400000 ? 'Yesterday ' : fmtDay(d) + ' ') + fmtTime(d);
+}
+/* Footer lines arrive as [{t, b, m}] pieces: b = bold, m = muted. Everything is escaped. */
+const seg = parts => (parts || []).map(p => p.b ? '<b>' + esc(p.t) + '</b>' : p.m ? '<span class="m">' + esc(p.t) + '</span>' : esc(p.t)).join('');
+
+const APPS = {
+  home:{name:'Command Center', icon:'grid'},
+  cs:  {name:'Customer Service', icon:'cs',      url:'https://bowilliams1.github.io/customer-service-dashboard/'},
+  inv: {name:'Inventory',        icon:'box',     url:'https://bowilliams1.github.io/inventory-app/'},
+  rev: {name:'Reviews',          icon:'star',    url:'https://bowilliams1.github.io/review-dashboard/'},
+  ap:  {name:'Bill Pay',         icon:'receipt', url:'https://bowilliams1.github.io/billing-dashboard/'},
+  ads: {name:'Amazon Ads',       icon:'ads',     url:null},
+  hub: {name:'Command Center',   icon:'hub',     url:null}
+};
+const appName = k => (APPS[k] ? APPS[k].name : 'Command Center');
+/* Brand marks, exactly as the Customer Service app shows them: a green leaf = Natural Elements,
+   the swoosh from the BOSH logo = BOSH Chemical. */
+const LEAF_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.6 3.2C11.4 3 4.2 7.9 4.2 15c0 1.8.5 3.4 1.4 4.8 1.6-4 4.6-7.2 8.9-9.6-3.6 2.8-6 6.1-7.1 9.9 1.2.6 2.6 1 4.2 1 6.8 0 9.4-6.9 9-17.9z"/></svg>';
+const SWOOSH_IMG = '<img alt="" src="data:image/png;base64,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">';
+function brandBadge(code){
+  if (code === 'ne') return '<span class="bb" role="img" title="Natural Elements" aria-label="Natural Elements">' + LEAF_SVG + '</span>';
+  if (code === 'bc') return '<span class="bb" role="img" title="BOSH Chemical" aria-label="BOSH Chemical">' + SWOOSH_IMG + '</span>';
+  return '<span class="bb internal" title="Internal note">→J</span>';
+}
+const SEV = {urgent:{lab:'Urgent', ic:'alert', cls:'crit'}, soon:{lab:'This week', ic:'warn', cls:'warn'}, fyi:{lab:'FYI', ic:'info', cls:'fyi'}};
+/* Where a click goes. A Customer Service item can carry the exact email (row key + engine). */
+const goAttrs = g => g ? ` data-go="${esc(g.app)}"` + (g.rowKey ? ` data-rk="${esc(g.rowKey)}" data-en="${esc(g.engine || '')}"` : '') : '';
+
+/* ================= state ================= */
+let P = null;                 // the latest payload from the Hub (kept in memory only)
+let lastFetch = 0, fetching = false, firstPaint = true, decAll = false;
+const openWhy = new Set();
+const collected = () => new Date(P.collectedAt);
+const nextAt = () => new Date(collected().getTime() + (P.everyMin || 15) * 60000);
+const nextIn = () => { const m = Math.ceil((nextAt() - Date.now()) / 60000); return m <= 0 ? 'any minute' : 'in ' + m + ' min'; };
+const anim = () => (firstPaint ? ' anim' : '');
+
+/* ================= the Hub: sign-in and numbers ================= */
+function getSession(){
+  try { const s = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); return s && s.token && s.exp > Date.now() ? s : null; }
+  catch (e) { return null; }
+}
+function setSession(s){ try { localStorage.setItem(SESSION_KEY, JSON.stringify({token: s.token, exp: s.exp})); } catch (e) { /* private mode: signed in for this visit only */ } }
+function clearSession(){ try { localStorage.removeItem(SESSION_KEY); } catch (e) {} }
+
+/* A "simple" POST (text/plain body, no custom headers), the way every BOSH app talks to Apps Script. */
+async function api(body){
+  const r = await fetch(HUB_URL, {method:'POST', body: JSON.stringify(body)});
+  const text = await r.text();
+  try { return JSON.parse(text); }
+  catch (e) { throw new Error('the engine sent an answer this page could not read'); }
+}
+
+function showSignIn(msg){
+  $('#signin').hidden = false;
+  $('#siErr').textContent = msg || '';
+  setTimeout(() => $('#siPw').focus(), 30);
+}
+$('#siForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const pw = $('#siPw').value;
+  if (!pw) return;
+  const btn = $('#siBtn');
+  btn.disabled = true; btn.textContent = 'Signing in…'; $('#siErr').textContent = '';
+  try {
+    const r = await api({action:'login', pw: pw});
+    if (r.ok){ setSession(r); $('#siPw').value = ''; $('#signin').hidden = true; renderLoading(); load(); }
+    else $('#siErr').textContent = r.error || 'Sign-in didn’t work. Try again.';
+  } catch (err) {
+    $('#siErr').textContent = 'Can’t reach the Command Center engine. Check the internet connection and try again.';
+  } finally { btn.disabled = false; btn.textContent = 'Sign in'; }
+});
+
+async function load(refresh){
+  const s = getSession();
+  if (!s){ P = null; renderLoading('Sign in to see your numbers.'); showSignIn(); return; }
+  if (fetching) return;
+  fetching = true; setBusy(true);
+  try {
+    const r = await api({action: refresh ? 'refresh' : 'snapshot', token: s.token});
+    if (r.auth === false){ clearSession(); P = null; renderLoading('Sign in to see your numbers.'); showSignIn('Please sign in again.'); return; }
+    if (!r.ok || !r.payload) throw new Error(r.error || 'the engine had a problem');
+    P = r.payload; lastFetch = Date.now();
+    renderAll();
+    if (r.note) toast(r.note);
+    else if (refresh) toast('Checked all 4 apps just now.');
+  } catch (err) {
+    const why = err && err.message ? ' (' + err.message + ')' : '';
+    setBanner((P ? 'Can’t reach the Command Center engine right now. These are the numbers from ' + fmtTime(collected()) + '. '
+                 : 'Can’t reach the Command Center engine. ') + 'It tries again in 2 minutes.' + why, 'crit');
+    if (!P) renderLoading('Waiting for the Command Center engine…');
+  } finally { fetching = false; setBusy(false); }
+}
+function setBusy(on){ const b = $('#refresh'); b.classList.toggle('busy', !!on); b.disabled = !!on; }
+setInterval(() => { if (!document.hidden && !fetching && getSession()) load(); }, POLL_MS);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && P && Date.now() - lastFetch > 60000) load(); });
+
+/* ================= renderers ================= */
+function renderLoading(msg){
+  document.body.classList.add('loading');
+  $('#kpis').innerHTML = ''; $('#agents').innerHTML = '';
+  ['#pCS', '#pAP', '#frOut', '#frIn', '#decPanel', '#pREV', '#week', '#activity'].forEach(s => { $(s).innerHTML = `<div class="none">${esc(msg || 'Loading your numbers…')}</div>`; });
+}
+function emptyPanel(title, app){
+  return `<div class="ph"><h2>${esc(title)}</h2><span class="sp"></span><button class="link" data-go="${app}">Open</button></div>
+    <div class="empty">${icon('warn', 18)}<span>The Command Center couldn’t read ${esc(appName(app))} on its last check. The details are under “Needs your decision”.</span></div>`;
+}
+function setBanner(text, tone){
+  const b = $('#banner');
+  if (!text){ b.hidden = true; b.innerHTML = ''; return; }
+  b.className = 'banner ' + (tone || 'warn');
+  b.innerHTML = icon(tone === 'crit' ? 'alert' : 'warn', 17) + '<span>' + esc(text) + '</span>';
+  b.hidden = false;
+}
+function renderSourceBanner(){
+  const bad = (P.sources || []).filter(s => !s.ok);
+  if (!bad.length){ setBanner(null); return; }
+  setBanner('Couldn’t read ' + bad.map(s => s.name + (s.hasData ? (s.staleSince ? ' (showing its numbers from ' + fmtTime(new Date(s.staleSince)) + ')' : ' (showing its last numbers)') : ' (no numbers)')).join(', ') +
+            ' on the last check. The details are under “Needs your decision”.', 'warn');
+}
+
+function renderSidebar(){
+  ['cs','inv','rev','ap'].forEach(k => {
+    const el = $(`[data-badge="${k}"]`), items = P.decisions.filter(d => d.app === k);
+    if (!items.length){ el.className = 'badge none'; el.textContent = ''; el.removeAttribute('aria-label'); return; }
+    const sev = items.some(d => d.sev === 'urgent') ? 'crit' : items.some(d => d.sev === 'soon') ? 'warn' : 'fyi';
+    el.className = 'badge ' + sev; el.textContent = items.length;
+    el.setAttribute('aria-label', items.length + (items.length === 1 ? ' item needs you' : ' items need you'));
+  });
+  const bad = P.agents.filter(a => a.st === 'warn' || a.st === 'crit').length;
+  $('#sys').innerHTML = `<div class="h">System status</div>
+    <div class="line ${bad ? 'warn' : ''}"><i></i><span>${bad ? bad + (bad === 1 ? ' automation needs' : ' automations need') + ' a look' : 'All automations on schedule'}</span></div>
+    <div class="skv"><span>Last check</span><b id="stUpd">${fmtTime(collected())}</b></div>
+    <div class="skv"><span>Next check</span><b id="stNext">${nextIn()}</b></div>`;
+  const urgent = P.decisions.filter(d => d.sev === 'urgent').length, n = $('#bellN');
+  n.hidden = !urgent; n.textContent = urgent;
+  $('#bell').setAttribute('aria-label', urgent ? urgent + ' urgent items' : 'No urgent items');
+}
+
+function renderKpis(){
+  $('#kpis').innerHTML = P.kpis.map((k, i) => `
+    <button class="kpi${anim()}" style="animation-delay:${(i * .03).toFixed(2)}s" ${k.k === 'dec' ? 'data-jump="1"' : `data-go="${esc(k.k)}"`}>
+      <span class="ki ${esc(k.tone)}">${icon(k.icon, 22)}</span>
+      <span class="kt"><span class="kl"><span class="lg">${esc(k.label)}</span><span class="sh">${esc(k.short || k.label)}</span></span>
+        <span class="kv">${esc(k.value)}${k.unit ? `<small>${esc(k.unit)}</small>` : ''}</span>
+        <span class="ks ${esc(k.subTone || '')}"><span class="lg">${esc(k.sub)}</span><span class="sh">${esc(k.subShort || k.sub)}</span></span></span>
+    </button>`).join('');
+}
+
+function moreLabel(rest){
+  return ['urgent','soon','fyi'].map(k => { const n = rest.filter(d => d.sev === k).length; return n ? n + ' ' + SEV[k].lab.toLowerCase() : ''; }).filter(Boolean).join(', ');
+}
+function renderDecisions(){
+  const D = P.decisions, SHOW = 5, rest = D.slice(SHOW), urgent = D.some(d => d.sev === 'urgent');
+  const chips = ['urgent','soon','fyi'].map(k => { const n = D.filter(d => d.sev === k).length; return n ? `<span class="chipc ${SEV[k].cls}">${n} ${SEV[k].lab.toLowerCase()}</span>` : ''; }).join('');
+  const lab = rest.length ? `Show ${rest.length} more · ${moreLabel(rest)}` : '';
+  $('#decPanel').innerHTML = `
+    <div class="ph"><h2 id="decH">Needs your decision</h2><span class="sub">most urgent first</span><span class="sp"></span>${chips}</div>
+    <div class="rows${decAll ? ' all' : ''}" id="dlist">${D.map((d, i) => {
+      const key = d.rule + '|' + String(d.title).replace(/[\d$,.]+/g, '#'), open = openWhy.has(key);
+      return `
+      <div class="lr dr${i >= SHOW ? ' extra' : ''}">
+        <span class="li ${SEV[d.sev].cls}">${icon(SEV[d.sev].ic, 17)}</span>
+        <div class="lt"><div class="dmeta"><span class="${SEV[d.sev].cls}">${SEV[d.sev].lab}</span> · ${esc(appName(d.app))}</div><b>${esc(d.title)}</b><span>${esc(d.detail)}<button class="whyb" data-why="why${i}" data-key="${esc(key)}" aria-expanded="${open}" aria-controls="why${i}">${open ? 'Hide' : 'Why?'}</button></span></div>
+        <div class="lm">${esc(d.ago || '')}</div>
+        ${d.action && d.go ? `<button class="obtn"${goAttrs(d.go)}>${esc(d.action)}${icon('arrow', 13)}</button>` : '<span></span>'}
+        <div class="why" id="why${i}"${open ? '' : ' hidden'}>${icon('info', 14)}<span>${esc(d.why)}</span><code>${esc(d.rule)}</code></div>
+      </div>`; }).join('')}</div>
+    ${rest.length ? `<button class="more" data-more data-label="${esc(lab)}" aria-expanded="${decAll}">${esc(decAll ? 'Show fewer' : lab)}</button>` : ''}
+    ${!D.length ? `<div class="allclear">${icon('checkc', 20)}Nothing needs you right now.</div>`
+      : urgent ? '' : `<div class="allclear">${icon('checkc', 20)}Nothing urgent. Everything else is running normally.</div>`}
+    <div class="pf" style="margin-top:${urgent ? 'auto' : '12px'}"><span>Routine items stay off this list.</span><span>Pulled from all 4 apps</span></div>`;
+}
+
+function renderFreight(){
+  const F = P.freight;
+  if (!F){ $('#frOut').innerHTML = emptyPanel('Freight outgoing', 'inv'); $('#frIn').innerHTML = emptyPanel('Freight incoming', 'inv'); return; }
+  $('#frOut').innerHTML = `
+    <div class="ph"><h2>Freight outgoing</h2><span class="sp"></span><span class="sub">from Inventory</span></div>
+    <div class="rows fr">${F.out.length ? F.out.map(f => `
+      <div class="lr"><span class="li">${icon('truck', 17)}</span>
+        <div class="lt"><b>${esc(f.carrier)}</b><span title="${esc(f.items)}">${esc(f.items)}</span>${f.pobol ? `<span>${esc(f.pobol)}</span>` : ''}${f.notes ? `<span>${esc(f.notes)}</span>` : ''}</div>
+        <div class="lm">${esc(f.day)}${f.time ? `<small>${esc(f.time)}</small>` : ''}<span class="stp ${esc(f.tone)}">${esc(f.status)}</span></div></div>`).join('')
+      : '<div class="none">No outgoing loads on the list.</div>'}</div>
+    ${F.outMore ? `<div class="qmore">+${F.outMore} more in Inventory</div>` : ''}
+    <div class="pf"><span>${seg(F.outFoot)}</span><button class="link" data-go="inv">View all</button></div>`;
+  $('#frIn').innerHTML = `
+    <div class="ph"><h2>Freight incoming</h2><span class="sp"></span><span class="sub">from Inventory</span></div>
+    <div class="rows fr">${F.in.length ? F.in.map(f => `
+      <div class="lr"><span class="li">${icon('truck', 17)}</span>
+        <div class="lt"><b>${esc(f.carrier)}</b><span title="${esc(f.items)}">${esc(f.items)}</span>${f.notes ? `<span>${esc(f.notes)}</span>` : ''}</div>
+        <div class="lm">${f.date ? 'ETA ' + esc(f.day) : esc(f.day)}${f.dateShort && f.day !== f.dateShort ? `<small>${esc(f.dateShort)}</small>` : ''}<span class="stp ${esc(f.tone)}">${esc(f.status)}</span></div></div>`).join('')
+      : '<div class="none">No deliveries on the list.</div>'}</div>
+    ${F.inMore ? `<div class="qmore">+${F.inMore} more in Inventory</div>` : ''}
+    <div class="pf"><span>${seg(F.inFoot)}</span><button class="link" data-go="inv">View all</button></div>`;
+}
+
+function box(b){ return `<div class="sbx${b.hl ? ' hl' : ''}"><div class="l">${esc(b.l)}</div><div class="v ${esc(b.vc || '')}">${esc(b.v)}</div><div class="d ${esc(b.dc || '')}">${esc(b.d)}</div></div>`; }
+function renderPanels(){
+  const C = P.cs;
+  $('#pCS').innerHTML = !C ? emptyPanel('Customer Service', 'cs') : `<div class="ph"><h2>Customer Service</h2><span class="sub">${esc(C.waiting)} waiting</span><span class="sp"></span><button class="link" data-go="cs">Open</button></div>
+    <div class="rows">${C.emails.length ? C.emails.map(e => `
+      <div class="lr qr" data-go="cs" data-rk="${esc(e.rowKey)}" data-en="${esc(e.engine)}" role="link" tabindex="0" aria-label="${esc('Open the email from ' + e.from)}">
+        ${brandBadge(e.brand)}
+        <div class="qn"><b>${esc(e.from)}</b> <em>· ${esc(e.via)} · ${esc(e.ago)}</em></div>
+        <span class="tier ${esc(e.tier)}">${esc(e.tier)}</span>
+        <div class="qs" title="${esc(e.snip)}">“${esc(e.snip)}”</div>
+      </div>`).join('') : '<div class="none">Inbox clear. Nothing is waiting for you.</div>'}</div>
+    ${C.more ? `<div class="qmore">+${C.more} more waiting in Customer Service</div>` : ''}
+    <div class="sgrid cs3" style="margin-top:10px">${C.boxes.map(box).join('')}</div>
+    <div class="pf" style="margin-top:12px"><span>${seg(C.foot)}</span></div>`;
+  const A = P.ap;
+  $('#pAP').innerHTML = !A ? emptyPanel('Bill Pay', 'ap') : `<div class="ph"><h2>Bill Pay</h2><span class="sp"></span><button class="link" data-go="ap">Open</button></div>
+    <div class="allbills"><div class="l">All bills due</div><div class="v">${esc(A.all.v)}</div><div class="d">${esc(A.all.d)}</div></div>
+    <div class="stack">${A.rows.map(r => `<div class="sbx"><div><div class="l">${esc(r.l)}</div><div class="d ${esc(r.dc || '')}">${esc(r.d)}</div></div><div class="v ${esc(r.vc || '')}">${esc(r.v)}</div></div>`).join('')}</div>
+    <div class="pf" style="margin-top:12px"><span>${seg(A.foot)}</span></div>`;
+  const R = P.rev;
+  $('#pREV').innerHTML = !R ? emptyPanel('Reviews', 'rev') : `<div class="ph"><h2>Reviews</h2><span class="sub">${esc(R.count)} products</span><span class="sp"></span><button class="link" data-go="rev">Open</button></div>
+    ${R.secs.map(x => `<div class="rsec"><div class="k ${esc(x.kc)}">${esc(x.k)}</div>
+      <div class="p"><span>${esc(x.name)}</span>${x.r ? `<b>${Number(x.r).toFixed(1)}★${x.was ? `<em>was ${Number(x.was).toFixed(1)}</em>` : ''}</b>` : ''}</div>
+      <div class="s">${esc(x.s)}</div>
+      ${x.bar !== null && x.r ? `<div class="bar ${esc(x.bar)}" tabindex="0" data-tv="${Number(x.r).toFixed(1)}★" data-tl="The bar runs from 3★ (empty) to 5★ (full)"><span style="width:${Math.max(4, Math.min(100, (x.r - 3) / 2 * 100)).toFixed(0)}%"></span></div>` : ''}
+    </div>`).join('')}
+    <div class="pf" style="margin-top:10px"><span>${seg(R.foot)}</span></div>`;
+}
+
+function renderAgents(){
+  const A = P.agents;
+  const bad = A.filter(a => a.st === 'warn' || a.st === 'crit').length;
+  const running = A.filter(a => !a.soon).length;
+  $('#agents').innerHTML = `
+    <div class="ph"><h2 id="agH">Handled automatically</h2><span class="sub">${bad ? bad + (bad === 1 ? ' needs' : ' need') + ' a look' : 'All automations on schedule'} · ${running} running · what Bosh OS did today</span><span class="sp"></span>
+      <span class="sub" style="color:var(--text-4)">Levels: watch → recommend → prepare → act within limits</span></div>
+    <div class="agrid">${A.map(a => `
+      <div class="ag${a.st === 'warn' ? ' warn' : a.st === 'crit' ? ' crit' : ''}${a.soon ? ' soon' : ''}">
+        <div class="agh">${icon(a.icon, 26)}<div><div class="agn">${esc(a.name)}</div><span class="stp ${esc(a.st)}">${esc(a.stl)}</span></div></div>
+        <div class="agd">${esc(a.desc)}</div>
+        <div class="agb"><b>${esc(a.big)}</b><span>${esc(a.bigl)}</span></div>
+        ${a.kv.map(([k, v, t]) => `<div class="agk"><span>${esc(k)}</span><b class="${esc(t || '')}"${v === '__LAST__' ? ' data-live="last"' : v === '__NEXT__' ? ' data-live="next"' : ''}>${esc(v === '__LAST__' ? fmtTime(collected()) : v === '__NEXT__' ? nextIn() : v)}</b></div>`).join('')}
+        ${a.note ? `<div class="agnote">${esc(a.note)}</div>` : ''}
+        ${a.lvl ? `<span class="lvl">${esc(a.lvl)}</span>` : ''}
+        ${a.btn ? `<button class="gbtn"${a.soon ? ' disabled' : ` data-go="${esc(a.key)}"`}>${esc(a.btn)}</button>` : `<button class="gbtn" disabled>Runs by itself</button>`}
+      </div>`).join('')}</div>`;
+}
+
+function renderWeek(){
+  const days = P.week.filter(d => d.events.length);
+  $('#week').innerHTML = `<div class="ph"><h2>The week ahead</h2><span class="sub">bills, freight and routines</span></div>
+    <div class="rows">${days.length ? days.map(d => `<div class="wk${d.today ? ' today' : ''}"><div class="wd">${esc(d.label)}<small>${esc(d.dateShort)}</small></div>
+        <div class="wi">${d.events.map(e => `<div class="${e.bill ? 'bill' : ''}">${icon(e.ic, 14)}<span title="${esc(e.t)}">${esc(e.t)}</span></div>`).join('')}</div>
+        <div class="wt${d.totalText ? '' : ' none'}">${d.totalText ? esc(d.totalText) : 'no bills'}</div></div>`).join('')
+      : '<div class="none">Nothing scheduled in the next 7 days.</div>'}</div>`;
+}
+
+function renderActivity(){
+  const list = P.activity;
+  $('#activity').innerHTML = `<div class="ph"><h2>Recent activity</h2><span class="sub">what happened · newest first</span></div>
+    <div class="acts">${list.length ? list.map(a => `<div class="act ${esc(a.tone || '')}">${icon(a.ic, 17)}<div class="t" title="${esc(a.t)}">${esc(a.t)}</div><div class="w">${esc(a.whenLabel || ago(new Date(a.when)))}<small>${esc(a.src)}</small></div></div>`).join('')
+      : '<div class="none">Nothing yet today.</div>'}</div>`;
+}
+
+function renderAll(){
+  document.body.classList.remove('loading');
+  renderSidebar(); renderKpis(); renderDecisions(); renderFreight(); renderPanels(); renderAgents(); renderWeek(); renderActivity();
+  renderSourceBanner();
+  if (!pal.hidden) renderRes();
+  $('#footVer').textContent = 'BOSH OS · Command Center · last check ' + fmtTime(collected()) + ' · Hub ' + P.version;
+  firstPaint = false;
+}
+
+/* ================= toast ================= */
+let toastTimer = null;
+function toast(msg, ms){
+  const t = $('#toast');
+  clearTimeout(toastTimer);
+  if (!msg){ t.classList.remove('on'); return; }
+  t.textContent = msg; t.classList.add('on');
+  toastTimer = setTimeout(() => t.classList.remove('on'), ms || 3500);
+}
+
+/* ================= tooltip ================= */
+const tip = $('#tip'), tipV = $('.tv', tip), tipL = $('.tl', tip);
+function showTip(v, l, x, y){
+  tipV.textContent = v; tipL.textContent = l || ''; tipL.hidden = !l;
+  tip.classList.add('on');
+  const r = tip.getBoundingClientRect();
+  let tx = x + 14, ty = y - r.height - 12;
+  if (tx + r.width > innerWidth - 8) tx = x - r.width - 14;
+  if (ty < 8) ty = y + 18;
+  tip.style.left = tx + 'px'; tip.style.top = ty + 'px';
+}
+function hideTip(){ tip.classList.remove('on'); }
+document.addEventListener('pointermove', e => { const t = e.target.closest('[data-tv]'); if (t) showTip(t.dataset.tv, t.dataset.tl, e.clientX, e.clientY); else hideTip(); });
+document.addEventListener('focusin', e => { const t = e.target.closest('[data-tv]'); if (t){ const r = t.getBoundingClientRect(); showTip(t.dataset.tv, t.dataset.tl, r.left + r.width / 2, r.top); } });
+document.addEventListener('focusout', hideTip);
+document.addEventListener('scroll', hideTip, true);
+
+/* ================= navigation: home + live apps ================= */
+let view = 'home';
+function show(v){
+  if (!APPS[v] || v === 'hub') v = 'home';
+  view = v;
+  $$('#nav a').forEach(a => {
+    const on = a.dataset.view === v;
+    a.classList.toggle('active', on);
+    if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+  });
+  const home = v === 'home';
+  $('#view-home').style.display = home ? '' : 'none';
+  $('#view-app').style.display = home ? 'none' : 'flex';
+  $('#pageTitle').textContent = APPS[v].name;
+  $('#pageSub').textContent = home ? 'Real-time overview of every BOSH app: what needs you, what changed, what’s next'
+                                   : 'Your live ' + APPS[v].name + ' app, opened inside the Command Center';
+  hideTip(); closePal();
+  if (!home) openApp(v);
+}
+function openApp(key){
+  const a = APPS[key];
+  $$('.fwrap').forEach(w => { w.hidden = w.id !== 'fw-' + key; });
+  const live = !!a.url;
+  $('.livechip').hidden = !live; $('#apNote').hidden = !live; $('#apReload').hidden = !live; $('#apNewTab').hidden = !live;
+  if (!live) return;
+  $('#apNewTab').href = a.url;
+  if (!$('#fw-' + key)){
+    const w = document.createElement('div');
+    w.className = 'fwrap'; w.id = 'fw-' + key;
+    w.innerHTML = `<div class="fload"><div><div class="spin"></div><p>Opening ${esc(a.name)}…</p></div></div>`;
+    const f = document.createElement('iframe');
+    f.title = a.name + ' (live app)';
+    f.src = a.url;
+    f.setAttribute('allow', 'clipboard-read; clipboard-write');
+    f.addEventListener('load', () => w.classList.add('loaded'));
+    w.appendChild(f);
+    $('#frames').appendChild(w);
+  }
+}
+$('#apReload').addEventListener('click', () => {
+  const w = $('#fw-' + view), f = w && $('iframe', w);
+  if (f){ w.classList.remove('loaded'); f.src = APPS[view].url; }
+});
+/* Navigate without relying on the browser's own #hash handling. Back/forward still work. */
+function go(v){
+  try { if (location.hash.slice(1) !== v) history.pushState(null, '', '#' + v); } catch (err) { /* no history */ }
+  show(v);
+}
+addEventListener('hashchange', () => show(location.hash.slice(1)));
+addEventListener('popstate', () => show(location.hash.slice(1) || 'home'));
+
+/* Open one exact email: show Customer Service, wait for its list to load (and for Bo to sign in to it,
+   if he hasn't yet today), then open that email the way a click in the app does. The Customer Service
+   app itself is not changed; if the email can't be found, the app simply stays open on its list. */
+function openCsEmail(rowKey, engine){
+  go('cs');
+  const started = Date.now();
+  toast('Opening that email in Customer Service…', 4000);
+  const tryOpen = () => {
+    if (view !== 'cs') return;
+    let done = false;
+    try {
+      const f = $('#fw-cs iframe'), w = f && f.contentWindow, d = f && f.contentDocument;
+      const row = d && [...d.querySelectorAll('.row')].find(el => (el.getAttribute('onclick') || '').indexOf("'" + rowKey + "'") >= 0);
+      if (row && w && typeof w.openDetail === 'function'){ w.openDetail(rowKey, engine); done = true; toast(null); }
+    } catch (e) { /* the app is still loading */ }
+    if (!done){
+      if (Date.now() - started < 120000) setTimeout(tryOpen, 700);
+      else toast('Customer Service is open. That email is in its list.', 6000);
+    }
+  };
+  setTimeout(tryOpen, 500);
+}
+
+/* ================= search (the real numbers on this page) ================= */
+const pal = $('#pal'), q = $('#q'), pres = $('#pres');
+function renderRes(){
+  const term = q.value.trim().toLowerCase();
+  const S = (P && P.search) || [];
+  const list = term ? S.filter(r => (r.t + ' ' + r.s + ' ' + appName(r.key)).toLowerCase().includes(term)).slice(0, 40) : S.slice(0, 6);
+  pres.innerHTML = `<div class="srh">${term ? 'Across every app' : 'Try a customer, a vendor, a carrier or a product'}</div>` +
+    (list.length ? list.map(r => `<button class="sr"${goAttrs(r.go || {app: r.key})}>${icon(APPS[r.key] ? APPS[r.key].icon : 'grid', 16)}<span class="srt"><b>${esc(r.t)}</b><small>${esc(r.s)}</small></span><span class="sra">${esc(appName(r.key))}</span></button>`).join('')
+                 : `<div class="srh" style="text-transform:none;letter-spacing:0">${P ? 'Nothing matches “' + esc(q.value.trim()) + '”.' : 'Sign in first.'}</div>`) +
+    `<div class="srf">Searches what’s on this page: waiting emails, unpaid bills, open freight and your products.</div>`;
+}
+function openPal(){ pal.hidden = false; renderRes(); setTimeout(() => q.focus(), 0); }
+function closePal(){ pal.hidden = true; q.value = ''; }
+q.addEventListener('input', renderRes);
+q.addEventListener('keydown', e => {
+  if (e.key === 'Enter'){ const first = $('.sr', pres); if (first) first.click(); }
+  if (e.key === 'ArrowDown'){ const first = $('.sr', pres); if (first){ e.preventDefault(); first.focus(); } }
+});
+pal.addEventListener('pointerdown', e => { if (e.target === pal) closePal(); });
+document.addEventListener('keydown', e => {
+  if (!$('#signin').hidden) return;
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k'){ e.preventDefault(); openPal(); }
+  else if (e.key === '/' && pal.hidden && !/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)){ e.preventDefault(); openPal(); }
+  else if (e.key === 'Escape' && !pal.hidden){ closePal(); }
+  else if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('[role=link][data-go]')){ e.preventDefault(); e.target.click(); }
+});
+
+/* ================= clicks ================= */
+document.addEventListener('click', e => {
+  const nav = e.target.closest('#nav a[data-view]');
+  if (nav){ e.preventDefault(); go(nav.dataset.view); return; }
+  const w = e.target.closest('[data-why]');
+  if (w){
+    const t = document.getElementById(w.dataset.why), open = t.hidden;
+    t.hidden = !open; w.setAttribute('aria-expanded', String(open)); w.textContent = open ? 'Hide' : 'Why?';
+    if (open) openWhy.add(w.dataset.key); else openWhy.delete(w.dataset.key);
+    return;
+  }
+  const target = e.target.closest('[data-go]');
+  if (target && !target.disabled){
+    e.preventDefault();
+    if (target.dataset.rk) openCsEmail(target.dataset.rk, target.dataset.en);
+    else go(target.dataset.go);
+    return;
+  }
+  const more = e.target.closest('[data-more]');
+  if (more){
+    decAll = $('#dlist').classList.toggle('all');
+    more.setAttribute('aria-expanded', String(decAll));
+    more.textContent = decAll ? 'Show fewer' : more.dataset.label;
+    return;
+  }
+  if (e.target.closest('[data-jump]') || e.target.closest('#bell')){
+    if (view !== 'home') go('home');
+    setTimeout(() => { const p = $('#decPanel'); p.scrollIntoView({behavior:'smooth', block:'start'});
+      p.animate([{boxShadow:'0 0 0 2px rgba(240,82,79,.6)'}, {boxShadow:'0 0 0 0 rgba(240,82,79,0)'}], {duration:1200}); }, 60);
+    return;
+  }
+  if (e.target.closest('#openSearch')){ openPal(); return; }
+  if (e.target.closest('#refresh')){ load(true); return; }
+  if (e.target.closest('#signOut')){ signOut(); return; }
+});
+async function signOut(){
+  const s = getSession();
+  clearSession(); P = null;
+  try { if (s) await api({action:'logout', token: s.token}); } catch (e) { /* signed out on this computer either way */ }
+  renderLoading('Signed out.');
+  setBanner(null);
+  showSignIn('You’re signed out of the Command Center. Your apps stay signed in.');
+}
+
+/* ================= clock + picking up each 15-minute check ================= */
+function tick(){
+  const now = new Date();
+  $('#dateTxt').textContent = now.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
+  $('#timeTxt').textContent = fmtTime(now);
+  if (!P) return;
+  const u = $('#stUpd'), n = $('#stNext');
+  if (u) u.textContent = fmtTime(collected());
+  if (n) n.textContent = nextIn();
+  $$('[data-live="last"]').forEach(el => { el.textContent = fmtTime(collected()); });
+  $$('[data-live="next"]').forEach(el => { el.textContent = nextIn(); });
+  if (!fetching && !document.hidden && Date.now() > nextAt().getTime() + 60000 && Date.now() - lastFetch > 60000) load();
+}
+setInterval(tick, 5000);
+
+/* ================= go ================= */
+hydrateIcons();
+tick();
+show(location.hash.slice(1) || 'home');
+if (!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(HUB_URL)){
+  renderLoading('Setup isn’t finished.');
+  setBanner('Setup isn’t finished: this page doesn’t know the Command Center engine’s address yet.', 'crit');
+} else if (getSession()){ renderLoading(); load(); }
+else { renderLoading('Sign in to see your numbers.'); showSignIn(); }
+})();
+</script>
+</body>
+</html>
