@@ -449,6 +449,7 @@ a{color:inherit}
       <a href="#inv" data-view="inv"><i data-ic="box"></i><span>Inventory</span><span class="badge none" data-badge="inv"></span></a>
       <a href="#rev" data-view="rev"><i data-ic="star"></i><span>Reviews</span><span class="badge none" data-badge="rev"></span></a>
       <a href="#ap" data-view="ap"><i data-ic="receipt"></i><span>Bill Pay</span><span class="badge none" data-badge="ap"></span></a>
+      <a href="#scan" data-view="scan"><i data-ic="scan"></i><span>Scan Master</span><span class="badge none" data-badge="scan"></span></a>
       <div class="sep"></div>
       <a href="#ads" data-view="ads" class="soon"><i data-ic="ads"></i><span>Amazon Ads</span><span class="tag">SOON</span></a>
     </nav>
@@ -554,6 +555,7 @@ const ICONS = {
   box:'<path d="M20.5 7.8 12 3.3 3.5 7.8v8.4l8.5 4.5 8.5-4.5z"/><path d="M3.5 7.8 12 12.3l8.5-4.5M12 12.3v8.4"/>',
   star:'<path d="m12 3.6 2.55 5.2 5.75.83-4.15 4.05.98 5.72L12 16.7l-5.13 2.7.98-5.72L3.7 9.63l5.75-.83z"/>',
   receipt:'<path d="M6 3.5h12v17l-2.5-1.6-2.5 1.6-2.5-1.6-2.5 1.6-2-1.3z"/><path d="M9 8h6M9 11.5h6M9 15h3.5"/>',
+  scan:'<path d="M7 3.5h7l4 4v13H7z"/><path d="M14 3.5v4h4"/><path d="M3.5 13h17"/>',
   ads:'<path d="M4 20V11M9.5 20V5M15 20v-6.5M20.5 20V9"/>',
   search:'<circle cx="11" cy="11" r="6.8"/><path d="m20 20-4.2-4.2"/>',
   bell:'<path d="M6 15.5V11a6 6 0 1 1 12 0v4.5l1.8 2H4.2z"/><path d="M10 20.3a2.2 2.2 0 0 0 4 0"/>',
@@ -603,6 +605,7 @@ const APPS = {
   inv: {name:'Inventory',        icon:'box',     url:'https://bowilliams1.github.io/inventory-app/'},
   rev: {name:'Reviews',          icon:'star',    url:'https://bowilliams1.github.io/review-dashboard/'},
   ap:  {name:'Bill Pay',         icon:'receipt', url:'https://bowilliams1.github.io/billing-dashboard/'},
+  scan:{name:'Scan Master',      icon:'scan',    url:'https://bowilliams1.github.io/scan-master/'},
   ads: {name:'Amazon Ads',       icon:'ads',     url:null},
   hub: {name:'Command Center',   icon:'hub',     url:null}
 };
@@ -685,6 +688,35 @@ async function load(refresh){
     if (!P) renderLoading('Waiting for the Command Center engine…');
   } finally { fetching = false; setBusy(false); }
 }
+/* Scan Master's menu badge. Scan Master runs in the sales@ account, so the Hub can't read it; instead this page
+   asks Scan Master directly, using the Scan Master sign-in this browser already has (same site, same storage).
+   Not signed in to Scan Master here -> no badge (open it from the menu once and sign in). Rule BR-CC-040. */
+const SCAN_URL = 'https://script.google.com/macros/s/AKfycbx8xjarFIhuOQ4md2ubY07ITSq-3t4whEg6Q0qqrqxVuN1EDkckWa5tBx-f3Ct0y4YQbg/exec', SCAN_SESSION_KEY = 'bosh_sm_session';
+let scanBusy = false;
+async function scanBadge(){
+  const el = $('[data-badge="scan"]'); if (!el || scanBusy) return;
+  let s = null; try { s = JSON.parse(localStorage.getItem(SCAN_SESSION_KEY) || 'null'); } catch (e) {}
+  const set = (cls, txt, label) => { el.className = 'badge ' + cls; el.textContent = txt; if (label) el.setAttribute('aria-label', label); else el.removeAttribute('aria-label'); el.title = label || ''; };
+  if (!s || !s.token || !(s.exp > Date.now())){ set('none', '', ''); return; }
+  scanBusy = true;
+  try {
+    const r = await fetch(SCAN_URL, {method: 'POST', body: JSON.stringify({action: 'summary', token: s.token})});
+    const j = JSON.parse(await r.text());
+    if (j.auth === false || !j.ok){ set('none', '', ''); return; }
+    const stale = j.lastRun && j.now && (Date.parse(j.now.replace(' ', 'T')) - Date.parse(j.lastRun.replace(' ', 'T'))) / 60000 > 35;
+    const sick = !j.keySet || /FAILED/.test(j.lastResult || '') || stale;
+    const n = j.waiting + j.needs + j.problems;
+    if (j.problems || sick) set('crit', n || '!', (j.problems ? j.problems + ' scan(s) could not be read. ' : '') + (sick ? 'Scan Master needs a look. ' : '') + j.waiting + ' waiting for you.');
+    else if (j.waiting) set('warn', n, j.waiting + ' document(s) waiting to be filed' + (j.needs ? ', ' + j.needs + ' in Needs Review' : ''));
+    else if (j.needs) set('fyi', j.needs, j.needs + ' in Needs Review');
+    else set('none', '', '');
+  } catch (e) { set('fyi', '?', 'Couldn’t reach Scan Master just now (' + (e && e.message || e) + ').'); }
+  finally { scanBusy = false; }
+}
+setInterval(() => { if (!document.hidden) scanBadge(); }, 120000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) scanBadge(); });
+addEventListener('storage', e => { if (e.key === SCAN_SESSION_KEY) scanBadge(); });   // signed in to Scan Master in its frame
+setTimeout(scanBadge, 1500);
 function setBusy(on){ const b = $('#refresh'); b.classList.toggle('busy', !!on); b.disabled = !!on; }
 setInterval(() => { if (!document.hidden && !fetching && getSession()) load(); }, POLL_MS);
 document.addEventListener('visibilitychange', () => { if (!document.hidden && P && Date.now() - lastFetch > 60000) load(); });
