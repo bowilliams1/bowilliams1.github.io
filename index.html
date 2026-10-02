@@ -690,19 +690,25 @@ async function load(refresh){
 }
 /* Scan Master's menu badge. Scan Master runs in the sales@ account, so the Hub can't read it; instead this page
    asks Scan Master directly, using the Scan Master sign-in this browser already has (same site, same storage).
-   Not signed in to Scan Master here -> no badge (open it from the menu once and sign in). Rule BR-CC-040. */
-const SCAN_URL = 'https://script.google.com/macros/s/AKfycbx8xjarFIhuOQ4md2ubY07ITSq-3t4whEg6Q0qqrqxVuN1EDkckWa5tBx-f3Ct0y4YQbg/exec', SCAN_SESSION_KEY = 'bosh_sm_session';
-let scanBusy = false;
+   Not signed in to Scan Master here -> no badge (open it from the menu once and sign in). Rule BR-CC-040.
+   Scan Master perf plan P6 (2026-10-02): no badge calls while the Scan Master view is open (its own page shows the
+   same numbers), one call every 5 minutes otherwise, and a pass Scan Master refused is never re-sent: the badge
+   waits until Scan Master's sign-in stores a different pass. The badge only reads bosh_sm_session, never clears it. */
+const SCAN_URL = 'https://script.google.com/macros/s/AKfycbx8xjarFIhuOQ4md2ubY07ITSq-3t4whEg6Q0qqrqxVuN1EDkckWa5tBx-f3Ct0y4YQbg/exec', SCAN_SESSION_KEY = 'bosh_sm_session', SCAN_BADGE_MS = 300000;
+let scanBusy = false, scanRefused = null, scanMaybe = null;   // scanRefused: the pass Scan Master refused for good; scanMaybe: refused once with "no-record" (memory only)
 async function scanBadge(){
-  const el = $('[data-badge="scan"]'); if (!el || scanBusy) return;
+  const el = $('[data-badge="scan"]'); if (!el || scanBusy || view === 'scan') return;
   let s = null; try { s = JSON.parse(localStorage.getItem(SCAN_SESSION_KEY) || 'null'); } catch (e) {}
   const set = (cls, txt, label) => { el.className = 'badge ' + cls; el.textContent = txt; if (label) el.setAttribute('aria-label', label); else el.removeAttribute('aria-label'); el.title = label || ''; };
-  if (!s || !s.token || !(s.exp > Date.now())){ set('none', '', ''); return; }
+  if (!s || !s.token || !(s.exp > Date.now()) || s.token === scanRefused){ set('none', '', ''); return; }
   scanBusy = true;
   try {
-    const r = await fetch(SCAN_URL, {method: 'POST', body: JSON.stringify({action: 'summary', token: s.token})});
+    const r = await fetch(SCAN_URL, {method: 'POST', body: JSON.stringify({action: 'summary', token: s.token, src: 'cc-badge'})});
     const j = JSON.parse(await r.text());
-    if (j.auth === false || !j.ok){ set('none', '', ''); return; }
+    // "no-record" can be a pass saved a moment ago (Scan Master asks once more too): give up on it only when refused twice in a row.
+    if (j.auth === false){ if (j.why !== 'no-record' || scanMaybe === s.token) scanRefused = s.token; else scanMaybe = s.token; set('none', '', ''); return; }
+    scanMaybe = null;
+    if (!j.ok){ set('none', '', ''); return; }
     const stale = j.lastRun && j.now && (Date.parse(j.now.replace(' ', 'T')) - Date.parse(j.lastRun.replace(' ', 'T'))) / 60000 > 35;
     const sick = !j.keySet || /FAILED/.test(j.lastResult || '') || stale;
     const n = j.waiting + j.needs + j.problems;
@@ -713,7 +719,7 @@ async function scanBadge(){
   } catch (e) { set('fyi', '?', 'Couldn’t reach Scan Master just now (' + (e && e.message || e) + ').'); }
   finally { scanBusy = false; }
 }
-setInterval(() => { if (!document.hidden) scanBadge(); }, 120000);
+setInterval(() => { if (!document.hidden) scanBadge(); }, SCAN_BADGE_MS);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) scanBadge(); });
 addEventListener('storage', e => { if (e.key === SCAN_SESSION_KEY) scanBadge(); });   // signed in to Scan Master in its frame
 setTimeout(scanBadge, 1500);
@@ -925,6 +931,7 @@ document.addEventListener('scroll', hideTip, true);
 let view = 'home';
 function show(v){
   if (!APPS[v] || v === 'hub') v = 'home';
+  const left = view;
   view = v;
   $$('#nav a').forEach(a => {
     const on = a.dataset.view === v;
@@ -939,6 +946,7 @@ function show(v){
                                    : 'Your live ' + APPS[v].name + ' app, opened inside the Command Center';
   hideTip(); closePal();
   if (!home) openApp(v);
+  if (left === 'scan' && v !== 'scan') scanBadge();   // badge was paused while Scan Master was open; catch up once
 }
 function openApp(key){
   const a = APPS[key];
